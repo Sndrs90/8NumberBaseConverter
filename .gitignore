@@ -1,0 +1,5 @@
+# Project exclude paths
+/.gradle/
+/Number Base Converter (Kotlin)/task/build/
+/Number Base Converter (Kotlin)/task/out/
+/Number Base Converter (Kotlin)/task/out/production/classes/
