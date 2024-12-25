@@ -1,66 +1,80 @@
 package converter
 
+import java.math.BigInteger
 import kotlin.math.pow
 
-val hexLetters = mapOf(
-    "a" to 10, "b" to 11, "c" to 12,
-    "d" to 13, "e" to 14, "f" to 15
-)
-
-val hexLettersInversion = mapOf(
-    10 to "a", 11 to "b", 12 to "c",
-    13 to "d", 14 to "e", 15 to "f"
-)
-
 fun main() {
+    var sourceBase = 10
+    var targetBase = 10
+
     while (true) {
-        print("Do you want to convert /from decimal or /to decimal (To quit type /exit) ")
+        print("Enter two numbers in format: {source base} {target base} (To quit type /exit) ")
         val input = readln()
-        when (input) {
-            "/from" -> convertFromDecimal()
-            "/to" -> convertToDecimal()
-            "/exit" -> break
+        val regex = Regex("\\d{1,2} \\d{1,2}")
+        when {
+            regex.matches(input) -> {
+                val inpList = input.split(" ").map { it.toInt() }
+                try {
+                    check(inpList.first() in 2..36){"Source base should be from 2 to 36"}
+                    check(inpList.last() in 2..36){"Target base should be from 2 to 36"}
+                    sourceBase = inpList.first()
+                    targetBase = inpList.last()
+                } catch (e:IllegalStateException) {
+                    println(e.message)
+                    continue
+                }
+            }
+            input == "/exit" -> break
+        }
+
+        while (true) {
+            print("Enter number in base $sourceBase to convert to base $targetBase (To go back type /back) ")
+            val numInput = readln()
+            when (numInput) {
+                "/back" -> break
+                else -> {
+                    val decimal = convertToDecimal(numInput, sourceBase)
+                    convertFromDecimal(decimal, targetBase)
+                }
+            }
         }
     }
 }
 
-private fun convertFromDecimal() {
-    print("Enter number in decimal system: ")
-    var num = readln().toInt()
-    print("Enter target base: ")
-    val base = readln().toInt()
+private fun convertFromDecimal(decimal: BigInteger, targetBase: Int) {
+    var num = decimal
+    val base = targetBase.toBigInteger()
 
     val intList = mutableListOf<Int>()
-    while (num > 0) {
-        intList.add(num % base)
+    while (num > 0.toBigInteger()) {
+        intList.add((num % base).toInt())
         num /= base
     }
     val result = intList.reversed().map {
         when {
             it < 10 -> it.toString()
-            else -> hexLettersInversion[it]
+            else -> intToLetter(it)
         }
     }
     println("Conversion result: ${result.joinToString("")}")
 }
 
-private fun convertToDecimal() {
-    print("Enter source number: ")
-    val num = readln()
-    print("Enter source base: ")
-    val base = readln().toDouble()
-    val reversedDigits: List<Int> = num.reversed().toCharArray().map{
+private fun convertToDecimal(number: String, sourceBase: Int): BigInteger {
+    val base = sourceBase.toDouble()
+    val reversedDigits: List<Int> = number.reversed().toCharArray().map{
         when  {
             it.isDigit() -> it.digitToInt()
-            it.isLetter() -> hexLetters[it.lowercase()] ?: 0
+            it.isLetter() -> letterToInt(it)
             else -> 0
         }
     }
-    var decimalNumber = 0
-    var i = 0
-    for (n in reversedDigits) {
-        decimalNumber += (n * base.pow(i)).toInt()
-        ++i
+    var decimalNumber = 0.toBigInteger()
+    for ((i, n) in reversedDigits.withIndex()) {
+        decimalNumber += (n.toBigInteger() * base.pow(i).toBigDecimal().toBigInteger())
     }
-    println("Conversion to decimal result: $decimalNumber")
+    return decimalNumber
 }
+
+private fun letterToInt(ch: Char) : Int = ch.code - 87
+
+private fun intToLetter(num: Int) : Char = (num + 87).toChar()
